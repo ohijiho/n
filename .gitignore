@@ -2,5 +2,5 @@
 .*
 !n
 !mk
-!n_helper
+!n_helper.py
 !.gitignore
