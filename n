@@ -1,0 +1,39 @@
+#!/bin/sh
+
+n="$1"
+history=./n_history
+case "$n" in
+[1-9])
+	n="$(tail -n+"$n" "$history" | head -n1)"
+	;;
+esac
+
+if [ -z "$n" ]; then
+	echo 'invalid number' >&2
+	exit 1
+fi
+
+t="$(mktemp)"
+
+(
+	echo "$n"
+	if [ -f "$history" ]; then
+		grep -v '^'"$n"'$' "$history" | head -n8
+	fi
+) >"$t"
+mv "$t" "$history"
+
+if ! [ -e "$n" ]; then
+	mkdir "$n"
+	cd "$n"
+	cat <<EOF >Makefile
+n = $n
+include ../mk
+EOF
+elif ! [ -d "$n" ]; then
+	mkdir "$n"
+	exit 1
+else
+	cd "$n"
+fi
+nvim "$n".cc input.txt output.txt
