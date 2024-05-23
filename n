@@ -36,4 +36,9 @@ elif ! [ -d "$n" ]; then
 else
 	cd "$n"
 fi
+
+if ! [ -e input.txt ] && ! [ -e output.txt ]; then
+	python3 ../n_helper.py make_tcs_cat "$n" input.txt output.txt
+fi
+
 nvim "$n".cc input.txt output.txt
