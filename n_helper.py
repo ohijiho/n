@@ -23,13 +23,17 @@ def extract_sample_ios(html):
     return res
 
 
+def normalize_linebreaks(x):
+    return x.replace('\r\n', '\n').replace('\r', '\n')
+
+
 def make_tcs_cat(n, in_file, out_file):
     ios = extract_sample_ios(fetch_problem(n))
     if not ios:
         return
     sin, sout = zip(*ios)
-    in_file.write(''.join(sin))
-    out_file.write(''.join(sout))
+    in_file.write(normalize_linebreaks(''.join(sin)))
+    out_file.write(normalize_linebreaks(''.join(sout)))
 
 
 def cmd_make_tcs_cat(n, in_file, out_file):
