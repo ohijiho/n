@@ -1,5 +1,23 @@
 #!/bin/sh
 
+metadname=.nmeta
+
+exe="$0"
+if ! echo "$exe" | grep '/' >/dev/null; then
+	exe="$(which "$exe")"
+fi
+ndir="$(realpath "$(dirname "$exe")")"
+if [ "$ndir/" = "$(pwd | head -c"$(expr "${#ndir}" + 1)")" ]; then
+	n="$(pwd | tail -c+"$(expr "${#ndir}" + 2)" | grep -o '^\d\+')"
+	d="$ndir/$(pwd | tail -c+"$(expr "${#ndir}" + 2)" | grep -o '^[^/]\+')"
+	# printf '\e]8;;'"https://www.acmicpc.net/problem/$n"'\e\\'"$(cat "$d/$metadname/title")"'\e]8;;\e\\\n'
+	# printf '\e]8;;'"https://www.acmicpc.net/submit/$n"'\e\\Submit\e]8;;\e\\\n'
+	echo "$(cat "$d/$metadname/title"): https://www.acmicpc.net/problem/$n"
+	echo "Submit: https://www.acmicpc.net/submit/$n"
+	exit
+fi
+cd "$ndir"
+
 n="$1"
 history=./n_history
 case "$n" in
@@ -39,6 +57,12 @@ fi
 
 if ! [ -e input.txt ] && ! [ -e output.txt ]; then
 	python3 ../n_helper.py make_tcs_cat "$n" input.txt output.txt
+fi
+
+metadir="$metadname"
+if ! [ -e "$metadir" ]; then
+	mkdir "$metadir"
+	python3 ../n_helper.py problem_title "$n" >"$metadir/title"
 fi
 
 nvim "$n".cc input.txt output.txt
