@@ -1,10 +1,14 @@
 #!/bin/sh
 
+set -e
 metadname=.nmeta
 
 exe="$0"
 if ! echo "$exe" | grep '/' >/dev/null; then
 	exe="$(which "$exe")"
+fi
+if [ -L "$exe" ]; then
+	exe="$(readlink -f "$exe")"
 fi
 ndir="$(realpath "$(dirname "$exe")")"
 if [ "$1" != ls ] && [ "$ndir/" = "$(pwd | head -c"$(expr "${#ndir}" + 1)")" ]; then
@@ -37,16 +41,16 @@ if [ "$1" = ls ]; then
 	)"
 	ls -1"$(if $a; then echo 'a'; fi)" | (
 		if $a; then
-			grep -v '^\.\|\.\.$'
+			grep -v '^\.\|\.\.$' || true
 		else
-			grep '^\d\d\d\d\d*'
+			grep '^\d\d\d\d\d*' || true
 		fi
 	) | sort -h | (
 		while read n; do
 			if ! [ -d "$n" ]; then
 				continue
 			fi
-			pn="$(echo "$n" | grep -o '^\d\+')"
+			pn="$(echo "$n" | grep -o '^\d\+' || true)"
 			if ! [ -f "$n/$pn".cc ]; then
 				if $a; then
 					echo "$n"
