@@ -19,7 +19,7 @@ clean:
 	python3 $< > $@
 
 %.output.txt: ref.py %.input.txt
-	python3 $@ < $(word 2, $^) > $@
+	python3 $< < $(word 2, $^) > $@
 
 %.ans.txt: $n %.input.txt
 	./$< < $(word 2, $^) > $@
