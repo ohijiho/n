@@ -11,7 +11,7 @@ test: ans.txt output.txt
 	diff $^
 
 clean:
-	rm -f $n $n.o
+	rm -f $n $n.o *.input.txt *.output.txt *.ans.txt ans.txt
 
 .PHONY: all clean test
 
@@ -31,3 +31,5 @@ test.%: %.ans.txt %.output.txt
 	diff $^
 
 # phony run.% and test.%
+
+.PRECIOUS: %.input.txt %.output.txt %.ans.txt ans.txt

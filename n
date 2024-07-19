@@ -5,117 +5,126 @@ metadname=.nmeta
 
 exe="$0"
 if ! echo "$exe" | grep '/' >/dev/null; then
-	exe="$(which "$exe")"
+  exe="$(which "$exe")"
 fi
 if [ -L "$exe" ]; then
-	exe="$(readlink -f "$exe")"
+  exe="$(readlink -f "$exe")"
 fi
 ndir="$(realpath "$(dirname "$exe")")"
 if [ "$1" != ls ] && [ "$ndir/" = "$(pwd | head -c"$(expr "${#ndir}" + 1)")" ]; then
-	n="$(pwd | tail -c+"$(expr "${#ndir}" + 2)" | grep -o '^\d\+')"
-	d="$ndir/$(pwd | tail -c+"$(expr "${#ndir}" + 2)" | grep -o '^[^/]\+')"
-	# printf '\e]8;;'"https://www.acmicpc.net/problem/$n"'\e\\'"$(cat "$d/$metadname/title")"'\e]8;;\e\\\n'
-	# printf '\e]8;;'"https://www.acmicpc.net/submit/$n"'\e\\Submit\e]8;;\e\\\n'
-	echo "$(cat "$d/$metadname/title"): https://www.acmicpc.net/problem/$n"
-	echo "Submit: https://www.acmicpc.net/submit/$n"
-	exit
+  n="$(pwd | tail -c+"$(expr "${#ndir}" + 2)" | grep -o '^\d\+')"
+  d="$ndir/$(pwd | tail -c+"$(expr "${#ndir}" + 2)" | grep -o '^[^/]\+')"
+  # printf '\e]8;;'"https://www.acmicpc.net/problem/$n"'\e\\'"$(cat "$d/$metadname/title")"'\e]8;;\e\\\n'
+  # printf '\e]8;;'"https://www.acmicpc.net/submit/$n"'\e\\Submit\e]8;;\e\\\n'
+  echo "$(cat "$d/$metadname/title"): https://www.acmicpc.net/problem/$n"
+  echo "Submit: https://www.acmicpc.net/submit/$n"
+  exit
 fi
 cd "$ndir"
 
+python="$(pwd)/.venv/bin/python"
+if ! [ -x "$python" ]; then
+  python3 -m venv .venv
+  .venv/bin/pip install -r requirements.txt
+fi
+
 make_meta() {
-	pn="$1"
-	metadir="$metadname"
-	if ! [ -e "$metadir" ]; then
-		mkdir "$metadir"
-		python3 ../n_helper.py problem_title "$pn" >"$metadir/title"
-	fi
+  pn="$1"
+  metadir="$metadname"
+  if ! [ -e "$metadir" ]; then
+    mkdir "$metadir"
+    "$python" ../n_helper.py problem_title "$pn" >"$metadir/title"
+  fi
 }
 
 if [ "$1" = ls ]; then
-	a="$(
-		if [ "$2" = '-a' ]; then
-			echo true
-		else
-			echo false
-		fi
-	)"
-	ls -1"$(if $a; then echo 'a'; fi)" | (
-		if $a; then
-			grep -v '^\.\|\.\.$' || true
-		else
-			grep '^\d\d\d\d\d*' || true
-		fi
-	) | sort -h | (
-		while read n; do
-			if ! [ -d "$n" ]; then
-				continue
-			fi
-			pn="$(echo "$n" | grep -o '^\d\+' || true)"
-			if ! [ -f "$n/$pn".cc ]; then
-				if $a; then
-					echo "$n"
-				fi
-				continue
-			fi
-			(
-				cd "$n"
-				make_meta "$pn"
-			)
-			echo "$n" "$(cat "$n/$metadname/title")"
-		done
-	)
-	exit
+  a="$(
+    if [ "$2" = '-a' ]; then
+      echo true
+    else
+      echo false
+    fi
+  )"
+  ls -1"$(if $a; then echo 'a'; fi)" | (
+    if $a; then
+      grep -v '^\.\|\.\.$' || true
+    else
+      grep '^\d\d\d\d\d*' || true
+    fi
+  ) | sort -h | (
+    while read n; do
+      if ! [ -d "$n" ]; then
+        continue
+      fi
+      pn="$(echo "$n" | grep -o '^\d\+' || true)"
+      if ! [ -f "$n/$pn".cc ]; then
+        if $a; then
+          echo "$n"
+        fi
+        continue
+      fi
+      (
+        cd "$n"
+        make_meta "$pn"
+      )
+      echo "$n" "$(cat "$n/$metadname/title")"
+    done
+  )
+  exit
 fi
 
 n="$1"
 if [ -z "$n" ]; then
-	n=1
+  n=1
 fi
 history=./n_history
 case "$n" in
 [1-9])
-	n="$(tail -n+"$n" "$history" | head -n1)"
-	;;
+  n="$(tail -n+"$n" "$history" | head -n1)"
+  ;;
 esac
 
 if [ -z "$n" ]; then
-	echo 'invalid number' >&2
-	exit 1
+  echo 'invalid number' >&2
+  exit 1
 fi
 
 t="$(mktemp)"
 
 (
-	echo "$n"
-	if [ -f "$history" ]; then
-		grep -v '^'"$n"'$' "$history" | head -n8
-	fi
+  echo "$n"
+  if [ -f "$history" ]; then
+    grep -v '^'"$n"'$' "$history" | head -n8
+  fi
 ) >"$t"
 mv "$t" "$history"
 
 pn="$(echo "$n" | grep -o '^\d\+')"
 
 if ! [ -e "$n" ]; then
-	mkdir "$n"
-	cd "$n"
-	cat <<EOF >Makefile
+  mkdir "$n"
+  cd "$n"
+  cat <<EOF >Makefile
 n = $pn
 include ../mk
 EOF
+  touch "$pn".cc
 elif ! [ -d "$n" ]; then # non-directory exists
-	mkdir "$n"              # show error message
-	exit 1
+  mkdir "$n"             # show error message
+  exit 1
 else
-	cd "$n"
+  cd "$n"
 fi
 
 if ! [ -f "$pn".cc ] || ! [ -f Makefile ]; then
-	# a project not created by n
-	exec nvim .
+  # a project not created by n
+  exec nvim .
 fi
 
 if ! [ -e input.txt ] && ! [ -e output.txt ]; then
-	python3 ../n_helper.py make_tcs_cat "$pn" input.txt output.txt
+  "$python" ../n_helper.py make_tcs_cat "$pn" input.txt output.txt
 fi
 
-nvim "$pn".cc input.txt output.txt
+make_meta "$pn"
+
+nvim "$pn".cc
